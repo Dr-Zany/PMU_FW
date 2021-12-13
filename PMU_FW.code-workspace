@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"C_Cpp.default.configurationProvider": "go2sh.cmake-integration",
+		"C_Cpp.clang_format_style": "file",
+		"C_Cpp.clang_format_fallbackStyle": "Visual Studio",
+		"editor.formatOnSave": true,
+	}
+}
