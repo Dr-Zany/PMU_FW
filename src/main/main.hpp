@@ -1,5 +1,5 @@
 /**
- * @file main.cpp
+ * @file main.hpp
  * @author zany
  * @brief 
  * @version 0.1
@@ -9,12 +9,5 @@
  * 
  */
 
-#include "pico/stdlib.h"
-#include "stdio.h"
-#include "main.hpp"
+#pragma once
 
-int main(void)
-{
-
-  return 0;
-}

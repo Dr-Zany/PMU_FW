@@ -1,5 +1,5 @@
 /**
- * @file main.cpp
+ * @file ads8681x.cpp
  * @author zany
  * @brief 
  * @version 0.1
@@ -9,12 +9,12 @@
  * 
  */
 
-#include "pico/stdlib.h"
-#include "stdio.h"
-#include "main.hpp"
+#include "ads8681x.hpp"
 
-int main(void)
+ADS8681x_c::ADS8681x_c(/* args */)
 {
+}
 
-  return 0;
+ADS8681x_c::~ADS8681x_c()
+{
 }
