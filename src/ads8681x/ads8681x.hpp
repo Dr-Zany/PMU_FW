@@ -18,10 +18,12 @@ class ADS8681x_c : public ads8681x_i
 public:
   ADS8681x_c(/* args */);
   ~ADS8681x_c();
-  bool Init(spi_inst_t *spi, uint baudrate, uint32_t clk, uint32_t rx, uint32_t tx, uint32_t csn) override;
+  bool Init(spi_inst_t *spi, uint baudrate, uint32_t clk, uint32_t rx, uint32_t tx, uint32_t csn,
+            uint32_t rst) override;
+  int32_t ReadValue(void) override;
 
 private:
   inline void SelectChip(void);
   inline void DeselectChip(void);
-  int16_t Read(void);
+  inline int32_t Read(void);
 };

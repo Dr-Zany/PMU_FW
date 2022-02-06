@@ -16,7 +16,10 @@
 class ads8681x_i
 {
 public:
-  virtual bool Init(spi_inst_t *spi, uint baudrate, uint32_t clk, uint32_t rx, uint32_t tx, uint32_t csn) = 0;
+  virtual bool Init(spi_inst_t *spi, uint baudrate, uint32_t clk, uint32_t rx, uint32_t tx, uint32_t csn,
+                    uint32_t rst) = 0;
+
+  virtual int32_t ReadValue(void) = 0;
 
 protected:
   virtual ~ads8681x_i() = default;
@@ -27,4 +30,5 @@ protected:
   uint32_t m_rx;
   uint32_t m_tx;
   uint32_t m_csn;
+  uint32_t m_rst;
 };

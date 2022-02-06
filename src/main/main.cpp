@@ -10,9 +10,19 @@
  */
 
 #include "main.hpp"
+#include "ads8681x.hpp"
 #include "hardware/spi.h"
+#include "pico/binary_info.h"
 #include "pico/stdlib.h"
+#include "stdbool.h"
 #include "stdio.h"
+
+#define ADS_SPI_BAUDRATE 100000 // Hz = 0.5MHz
+#define GPIO_ADS_SPI_CLK 2
+#define GPIO_ADS_SPI_TX 3
+#define GPIO_ADS_SPI_RX 0
+#define GPIO_ADS_SPI_CS 5
+#define GPIO_ADS_RST 4
 
 typedef enum
 {
@@ -20,11 +30,70 @@ typedef enum
   MEASRING
 } state_t;
 
+typedef union {
+  uint8_t map[4];
+  uint32_t block;
+} rawData_t;
+
+void SelectChip()
+{
+  asm volatile("nop \n nop \n nop");
+  gpio_put(GPIO_ADS_SPI_CS, 0); // Active low
+  asm volatile("nop \n nop \n nop");
+}
+
+void DeselectChip()
+{
+  asm volatile("nop \n nop \n nop");
+  gpio_put(GPIO_ADS_SPI_CS, 1); // Inactive high
+  asm volatile("nop \n nop \n nop");
+}
+
+int32_t Read()
+{
+  rawData_t data;
+  SelectChip();
+  spi_read_blocking(spi0, 0, data.map, 4);
+  DeselectChip();
+  return data.block;
+}
+
 int main(void)
 {
+  ADS8681x_c adc;
   absolute_time_t loopTime;
   state_t state = IDEL;
   uint8_t inputChar = 0;
+
+  /* Init */
+  stdio_init_all();
+
+  //  initing spi interface with baudrate
+  spi_init(spi0, ADS_SPI_BAUDRATE);
+
+  // setting pins for the spi interface
+  gpio_set_function(GPIO_ADS_SPI_RX, GPIO_FUNC_SPI);
+  gpio_set_function(GPIO_ADS_SPI_TX, GPIO_FUNC_SPI);
+  gpio_set_function(GPIO_ADS_SPI_CLK, GPIO_FUNC_SPI);
+  // Make the SPI pins available to picotool
+  bi_decl(bi_3pins_with_func(GPIO_ADS_SPI_RX, GPIO_ADS_SPI_TX, GPIO_ADS_SPI_CLK, GPIO_FUNC_SPI));
+
+  // setting csn pin
+  gpio_init(GPIO_ADS_SPI_CS);
+  gpio_set_dir(GPIO_ADS_SPI_CS, GPIO_OUT);
+  gpio_put(GPIO_ADS_SPI_CS, true);
+  // Make thc CS pin available to picotool
+  bi_decl(bi_1pin_with_name(GPIO_ADS_SPI_CS, "SPI CS"));
+
+  // setting rst pin
+  gpio_init(GPIO_ADS_RST);
+  gpio_set_dir(GPIO_ADS_RST, GPIO_OUT);
+  gpio_put(GPIO_ADS_RST, true);
+  // Make thc CS pin available to picotool
+  bi_decl(bi_1pin_with_name(GPIO_ADS_RST, "SPI RST"));
+
+  adc.Init(spi0, 500 * 1000, GPIO_ADS_SPI_CLK, GPIO_ADS_SPI_RX, GPIO_ADS_SPI_TX, GPIO_ADS_SPI_CS, GPIO_ADS_RST);
+  printf("starting\n");
   while (true)
   {
     loopTime = make_timeout_time_ms(10);
@@ -33,13 +102,15 @@ int main(void)
     {
     case IDEL:
       inputChar = getchar_timeout_us(0);
+      printf("%ld\n", Read());
+      // printf("test\n");
       break;
 
     default:
       break;
     }
     /* Timed loop end */
-    if (absolute_time_diff_us(get_absolute_time(), loopTime) >= 0)
+    if (absolute_time_diff_us(get_absolute_time(), loopTime) < 0)
     {
       printf("####### Loop to slow #########");
     }
