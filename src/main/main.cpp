@@ -110,8 +110,20 @@ int main(void)
     {
     case IDEL:
       inputChar = getchar_timeout_us(0);
+      if (inputChar == 's')
+      {
+        state = MEASRING;
+        inputChar = 0;
+      }
+      break;
+    case MEASRING:
       printf("%lu\n", ADCRead());
-      // printf("test\n");
+      inputChar = getchar_timeout_us(0);
+      if (inputChar == 'e')
+      {
+        state = IDEL;
+        inputChar = 0;
+      }
       break;
 
     default:
