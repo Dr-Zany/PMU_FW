@@ -10,7 +10,6 @@
  */
 
 #include "main.hpp"
-#include "ads8681x.hpp"
 #include "hardware/spi.h"
 #include "pico/binary_info.h"
 #include "pico/stdlib.h"
@@ -30,11 +29,6 @@ typedef enum
   MEASRING
 } state_t;
 
-typedef union {
-  uint8_t map[4];
-  uint32_t block;
-} rawData_t;
-
 void SelectChip()
 {
   asm volatile("nop \n nop \n nop");
@@ -49,18 +43,29 @@ void DeselectChip()
   asm volatile("nop \n nop \n nop");
 }
 
-int32_t Read()
+uint16_t ADCRead()
 {
-  rawData_t data;
+  uint8_t data[2];
   SelectChip();
-  spi_read_blocking(spi0, 0, data.map, 4);
+  spi_read_blocking(spi0, 0, data, 2);
   DeselectChip();
-  return data.block;
+  return (int32_t)(data[0] << 8 | data[1]);
+}
+
+void ADCWriteRegister(uint8_t address, uint16_t data)
+{
+  uint8_t payload[4];
+  payload[0] = 0b11010000;
+  payload[1] = address;
+  payload[2] = data >> 8;
+  payload[3] = data;
+  SelectChip();
+  spi_write_blocking(spi0, payload, 4);
+  DeselectChip();
 }
 
 int main(void)
 {
-  ADS8681x_c adc;
   absolute_time_t loopTime;
   state_t state = IDEL;
   uint8_t inputChar = 0;
@@ -92,17 +97,20 @@ int main(void)
   // Make thc CS pin available to picotool
   bi_decl(bi_1pin_with_name(GPIO_ADS_RST, "SPI RST"));
 
-  adc.Init(spi0, 500 * 1000, GPIO_ADS_SPI_CLK, GPIO_ADS_SPI_RX, GPIO_ADS_SPI_TX, GPIO_ADS_SPI_CS, GPIO_ADS_RST);
+  busy_wait_ms(10);
+
+  ADCWriteRegister(0x14, 0b1011);
+
   printf("starting\n");
   while (true)
   {
-    loopTime = make_timeout_time_ms(10);
+    loopTime = make_timeout_time_ms(1);
     /* Timed loop Start */
     switch (state)
     {
     case IDEL:
       inputChar = getchar_timeout_us(0);
-      printf("%ld\n", Read());
+      printf("%lu\n", ADCRead());
       // printf("test\n");
       break;
 

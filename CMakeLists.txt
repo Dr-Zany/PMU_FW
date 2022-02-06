@@ -19,5 +19,4 @@ add_compile_options(
   -Wno-maybe-uninitialized
 )
 
-add_subdirectory(src/ads8681x)
 add_subdirectory(src/main)
