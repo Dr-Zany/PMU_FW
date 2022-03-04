@@ -11,6 +11,7 @@
 
 #include "main.hpp"
 #include "hardware/spi.h"
+#include "math.h"
 #include "pico/binary_info.h"
 #include "pico/stdlib.h"
 #include "stdbool.h"
@@ -29,39 +30,20 @@ typedef enum
   MEASRING
 } state_t;
 
-void SelectChip()
-{
-  asm volatile("nop \n nop \n nop");
-  gpio_put(GPIO_ADS_SPI_CS, 0); // Active low
-  asm volatile("nop \n nop \n nop");
-}
-
-void DeselectChip()
-{
-  asm volatile("nop \n nop \n nop");
-  gpio_put(GPIO_ADS_SPI_CS, 1); // Inactive high
-  asm volatile("nop \n nop \n nop");
-}
-
 uint16_t ADCRead()
 {
-  uint8_t data[2];
-  SelectChip();
-  spi_read_blocking(spi0, 0, data, 2);
-  DeselectChip();
-  return (int32_t)(data[0] << 8 | data[1]);
+  static uint16_t count = 0;
+  if (count > 359)
+  {
+    count = 0;
+  }
+  float tmp = (sin(count * (M_PI / 180)) + 1) * pow(2, 15);
+  count++;
+  return (uint16_t)(tmp - 1);
 }
 
 void ADCWriteRegister(uint8_t address, uint16_t data)
 {
-  uint8_t payload[4];
-  payload[0] = 0b11010000;
-  payload[1] = address;
-  payload[2] = data >> 8;
-  payload[3] = data;
-  SelectChip();
-  spi_write_blocking(spi0, payload, 4);
-  DeselectChip();
 }
 
 int main(void)
